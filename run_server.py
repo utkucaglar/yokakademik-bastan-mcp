@@ -14,15 +14,15 @@ sys.path.insert(0, str(project_root))
 from src.mcp_server import main
 
 if __name__ == "__main__":
-    print("🎓 Academic Scraper MCP Server başlatılıyor...")
-    print("📡 Smithery ile bağlantı kuruluyor...")
-    print("🔧 Real-time streaming scraping aktif...")
-    print("=" * 50)
+    print("🎓 Academic Scraper MCP Server başlatılıyor...", file=sys.stderr)
+    print("📡 Smithery ile bağlantı kuruluyor...", file=sys.stderr)
+    print("🔧 Real-time streaming scraping aktif...", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
     
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        print("\n🛑 Server kapatılıyor...")
+        print("\n🛑 Server kapatılıyor...", file=sys.stderr)
     except Exception as e:
-        print(f"❌ Server hatası: {e}")
+        print(f"❌ Server hatası: {e}", file=sys.stderr)
         sys.exit(1) 

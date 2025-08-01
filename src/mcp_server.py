@@ -10,6 +10,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List
 
+import mcp
 from mcp.server import Server
 from mcp.types import (
     Resource,
@@ -19,6 +20,7 @@ from mcp.types import (
     EmbeddedResource,
     LoggingLevel
 )
+import mcp.types as types
 
 from src.scraper.academic_scraper import StreamingAcademicScraper
 from src.scraper.session_manager import create_session, get_session, list_sessions
@@ -192,10 +194,11 @@ async def run_scraping_background(session_id: str, name: str, field_id: int = No
 
 async def main():
     """MCP Server başlat"""
-    print("🎓 Academic Scraper MCP Server başlatılıyor...")
-    print("📡 Smithery ile bağlantı kuruluyor...")
-    print("🔧 Real-time streaming scraping aktif...")
-    print("=" * 50)
+    import sys
+    print("🎓 Academic Scraper MCP Server başlatılıyor...", file=sys.stderr)
+    print("📡 Smithery ile bağlantı kuruluyor...", file=sys.stderr)
+    print("🔧 Real-time streaming scraping aktif...", file=sys.stderr)
+    print("=" * 50, file=sys.stderr)
     
     # stdio transport
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):

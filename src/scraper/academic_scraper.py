@@ -3,6 +3,7 @@ Akademik scraping logic
 """
 import asyncio
 import json
+import sys
 import time
 from typing import Any, Dict, Generator, List, Optional
 from selenium import webdriver
@@ -58,31 +59,32 @@ class StreamingAcademicScraper:
             from webdriver_manager.chrome import ChromeDriverManager
             import os
             
-            print("🔧 ChromeDriver kurulumu başlatılıyor...")
+            import sys
+            print("🔧 ChromeDriver kurulumu başlatılıyor...", file=sys.stderr)
             
             # Windows için driver path'i ayarla
             driver_path = ChromeDriverManager().install()
-            print(f"✅ ChromeDriver bulundu: {driver_path}")
+            print(f"✅ ChromeDriver bulundu: {driver_path}", file=sys.stderr)
             
             self.driver = webdriver.Chrome(
                 service=Service(driver_path),
                 options=options
             )
             self.driver.set_window_size(1920, 1080)
-            print("✅ Chrome WebDriver başarıyla başlatıldı")
+            print("✅ Chrome WebDriver başarıyla başlatıldı", file=sys.stderr)
             
         except Exception as e:
             # Fallback: Selenium'in otomatik driver'ını kullan
-            print(f"❌ ChromeDriverManager hatası: {e}")
-            print("🔄 Selenium otomatik driver kullanılıyor...")
+            print(f"❌ ChromeDriverManager hatası: {e}", file=sys.stderr)
+            print("🔄 Selenium otomatik driver kullanılıyor...", file=sys.stderr)
             
             try:
                 self.driver = webdriver.Chrome(options=options)
                 self.driver.set_window_size(1920, 1080)
-                print("✅ Selenium otomatik driver başarıyla başlatıldı")
+                print("✅ Selenium otomatik driver başarıyla başlatıldı", file=sys.stderr)
             except Exception as fallback_error:
                 error_msg = f"Chrome WebDriver başlatılamadı: {fallback_error}"
-                print(f"❌ {error_msg}")
+                print(f"❌ {error_msg}", file=sys.stderr)
                 raise Exception(error_msg)
     
     async def scrape_profiles_streaming(self, name: str, session_id: str, 
@@ -102,10 +104,10 @@ class StreamingAcademicScraper:
             
             try:
                 self.setup_driver()
-                print(f"✅ WebDriver başarıyla başlatıldı")
+                print(f"✅ WebDriver başarıyla başlatıldı", file=sys.stderr)
             except Exception as driver_error:
                 error_msg = f"WebDriver başlatma hatası: {str(driver_error)}"
-                print(f"❌ {error_msg}")
+                print(f"❌ {error_msg}", file=sys.stderr)
                 yield {"type": "error", "data": {"message": error_msg, "session_id": session_id}}
                 return
             
@@ -213,7 +215,7 @@ class StreamingAcademicScraper:
                         await asyncio.sleep(0.1)
                         
                     except Exception as e:
-                        print(f"Profil işlenirken hata: {e}")
+                        print(f"Profil işlenirken hata: {e}", file=sys.stderr)
                         continue
                 
                 # Pagination
@@ -235,7 +237,7 @@ class StreamingAcademicScraper:
                     await asyncio.sleep(0.3)
                     
                 except Exception as e:
-                    print(f"Pagination hatası: {e}")
+                    print(f"Pagination hatası: {e}", file=sys.stderr)
                     break
             
             # Progress: 90% - Scraping tamamlandı
@@ -251,9 +253,9 @@ class StreamingAcademicScraper:
             if self.driver:
                 try:
                     self.driver.quit()
-                    print("✅ WebDriver kapatıldı")
+                    print("✅ WebDriver kapatıldı", file=sys.stderr)
                 except Exception as quit_error:
-                    print(f"⚠️ WebDriver kapatma hatası: {quit_error}")
+                    print(f"⚠️ WebDriver kapatma hatası: {quit_error}", file=sys.stderr)
             
             # Final progress
             self.session.update_progress(100, "İşlem tamamlandı")
@@ -325,7 +327,7 @@ class StreamingAcademicScraper:
                         await asyncio.sleep(0.1)
                         
                 except Exception as e:
-                    print(f"İşbirlikçi detayı çekilirken hata: {e}")
+                    print(f"İşbirlikçi detayı çekilirken hata: {e}", file=sys.stderr)
                     
         except Exception as e:
             yield {"type": "error", "data": {"message": f"İşbirlikçi scraping hatası: {e}"}}
@@ -373,7 +375,7 @@ class StreamingAcademicScraper:
             }
             
         except Exception as e:
-            print(f"Profil verisi çıkarılırken hata: {e}")
+            print(f"Profil verisi çıkarılırken hata: {e}", file=sys.stderr)
             return {}
     
     def _extract_collaborator_data(self, collab_data: Dict, collab_id: int) -> Dict:
@@ -443,7 +445,7 @@ class StreamingAcademicScraper:
             return result
             
         except Exception as e:
-            print(f"İşbirlikçi verisi çıkarılırken hata: {e}")
+            print(f"İşbirlikçi verisi çıkarılırken hata: {e}", file=sys.stderr)
             return collab_data
     
     def _filter_profile(self, profile: Dict, field_id: Optional[int], specialty_ids: Optional[List[int]]) -> bool:
