@@ -21,8 +21,9 @@ from mcp.types import (
 )
 import mcp.types as types
 
-from src.scraper.academic_scraper import StreamingAcademicScraper
-from src.scraper.session_manager import create_session, get_session, list_sessions
+# Lazy loading - Selenium import'larını sadece gerektiğinde yap
+# from src.scraper.academic_scraper import StreamingAcademicScraper
+# from src.scraper.session_manager import create_session, get_session, list_sessions
 
 # MCP Server
 server = Server("academic-scraper")
@@ -106,6 +107,15 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.T
     """Tool çağrı handler"""
     
     if name == "scrape_academic_profiles":
+        # Lazy loading - Selenium import'larını sadece gerektiğinde yap
+        try:
+            from src.scraper.academic_scraper import StreamingAcademicScraper
+            from src.scraper.session_manager import create_session, get_session, list_sessions
+        except ImportError as e:
+            return [types.TextContent(type="text", text=json.dumps({
+                "error": f"Scraping modülleri yüklenemedi: {str(e)}"
+            }, ensure_ascii=False))]
+        
         # Yeni session oluştur
         session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
         
@@ -187,6 +197,14 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.T
             return [types.TextContent(type="text", text=json.dumps(response, ensure_ascii=False))]
     
     elif name == "get_session_status":
+        # Lazy loading
+        try:
+            from src.scraper.session_manager import get_session
+        except ImportError as e:
+            return [types.TextContent(type="text", text=json.dumps({
+                "error": f"Session modülü yüklenemedi: {str(e)}"
+            }, ensure_ascii=False))]
+        
         session_id = arguments["session_id"]
         session = get_session(session_id)
         
@@ -198,10 +216,26 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.T
         return [types.TextContent(type="text", text=json.dumps(status, ensure_ascii=False, indent=2))]
     
     elif name == "list_active_sessions":
+        # Lazy loading
+        try:
+            from src.scraper.session_manager import list_sessions
+        except ImportError as e:
+            return [types.TextContent(type="text", text=json.dumps({
+                "error": f"Session modülü yüklenemedi: {str(e)}"
+            }, ensure_ascii=False))]
+        
         sessions_info = list_sessions()
         return [types.TextContent(type="text", text=json.dumps(sessions_info, ensure_ascii=False, indent=2))]
     
     elif name == "get_session_results":
+        # Lazy loading
+        try:
+            from src.scraper.session_manager import get_session
+        except ImportError as e:
+            return [types.TextContent(type="text", text=json.dumps({
+                "error": f"Session modülü yüklenemedi: {str(e)}"
+            }, ensure_ascii=False))]
+        
         session_id = arguments["session_id"]
         session = get_session(session_id)
         
@@ -223,6 +257,14 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.T
 async def run_scraping_background(session_id: str, name: str, field_id: int = None, 
                                  specialty_ids: List[int] = None, email: str = None):
     """Background'da scraping çalıştır"""
+    # Lazy loading
+    try:
+        from src.scraper.academic_scraper import StreamingAcademicScraper
+        from src.scraper.session_manager import get_session
+    except ImportError as e:
+        print(f"Background scraping hatası: {e}", file=sys.stderr)
+        return
+    
     scraper = StreamingAcademicScraper()
     
     try:
