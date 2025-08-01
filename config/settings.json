@@ -1,0 +1,40 @@
+{
+  "scraping": {
+    "max_profiles": 100,
+    "max_collaborators": 50,
+    "timeout": 30,
+    "retry_count": 3,
+    "delay_between_requests": 0.5,
+    "heartbeat_interval": 30
+  },
+  "webdriver": {
+    "headless": true,
+    "window_size": {
+      "width": 1920,
+      "height": 1080
+    },
+    "user_agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "chrome_options": [
+      "--disable-gpu",
+      "--no-sandbox",
+      "--disable-dev-shm-usage",
+      "--disable-web-security",
+      "--disable-features=VizDisplayCompositor"
+    ]
+  },
+  "session": {
+    "cleanup_interval": 3600,
+    "max_sessions": 10,
+    "session_timeout": 7200
+  },
+  "logging": {
+    "level": "INFO",
+    "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    "file": "logs/academic_scraper.log"
+  },
+  "paths": {
+    "sessions_dir": "sessions",
+    "fields_file": "main_codes/public/fields.json",
+    "logs_dir": "logs"
+  }
+} 
