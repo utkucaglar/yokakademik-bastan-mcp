@@ -31,21 +31,59 @@ class StreamingAcademicScraper:
         options.add_argument("--disable-gpu")
         options.add_argument("--no-sandbox")
         options.add_argument("--disable-dev-shm-usage")
-        options.add_argument("user-agent=Mozilla/5.0")
+        options.add_argument("--disable-web-security")
+        options.add_argument("--allow-running-insecure-content")
+        options.add_argument("--disable-extensions")
+        options.add_argument("--disable-plugins")
+        options.add_argument("--disable-images")
+        options.add_argument("--disable-css")
+        options.add_argument("--disable-background-timer-throttling")
+        options.add_argument("--disable-backgrounding-occluded-windows")
+        options.add_argument("--disable-renderer-backgrounding")
+        options.add_argument("--disable-features=TranslateUI")
+        options.add_argument("--disable-ipc-flooding-protection")
+        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         
         # Performans optimizasyonu
         prefs = {
             "profile.managed_default_content_settings.images": 2,
             "profile.managed_default_content_settings.stylesheets": 2,
             "profile.managed_default_content_settings.fonts": 2,
+            "profile.managed_default_content_settings.javascript": 1,  # JavaScript'i açık tut
         }
         options.add_experimental_option("prefs", prefs)
         
-        self.driver = webdriver.Chrome(
-            service=Service(ChromeDriverManager().install()),
-            options=options
-        )
-        self.driver.set_window_size(1920, 1080)
+        try:
+            # Windows için özel ChromeDriver kurulumu
+            from webdriver_manager.chrome import ChromeDriverManager
+            import os
+            
+            print("🔧 ChromeDriver kurulumu başlatılıyor...")
+            
+            # Windows için driver path'i ayarla
+            driver_path = ChromeDriverManager().install()
+            print(f"✅ ChromeDriver bulundu: {driver_path}")
+            
+            self.driver = webdriver.Chrome(
+                service=Service(driver_path),
+                options=options
+            )
+            self.driver.set_window_size(1920, 1080)
+            print("✅ Chrome WebDriver başarıyla başlatıldı")
+            
+        except Exception as e:
+            # Fallback: Selenium'in otomatik driver'ını kullan
+            print(f"❌ ChromeDriverManager hatası: {e}")
+            print("🔄 Selenium otomatik driver kullanılıyor...")
+            
+            try:
+                self.driver = webdriver.Chrome(options=options)
+                self.driver.set_window_size(1920, 1080)
+                print("✅ Selenium otomatik driver başarıyla başlatıldı")
+            except Exception as fallback_error:
+                error_msg = f"Chrome WebDriver başlatılamadı: {fallback_error}"
+                print(f"❌ {error_msg}")
+                raise Exception(error_msg)
     
     async def scrape_profiles_streaming(self, name: str, session_id: str, 
                                       field_id: Optional[int] = None,
@@ -62,7 +100,14 @@ class StreamingAcademicScraper:
             self.session.update_progress(5, "WebDriver başlatılıyor...")
             yield {"type": "progress", "data": {"progress": 5, "step": "WebDriver başlatılıyor..."}}
             
-            self.setup_driver()
+            try:
+                self.setup_driver()
+                print(f"✅ WebDriver başarıyla başlatıldı")
+            except Exception as driver_error:
+                error_msg = f"WebDriver başlatma hatası: {str(driver_error)}"
+                print(f"❌ {error_msg}")
+                yield {"type": "error", "data": {"message": error_msg, "session_id": session_id}}
+                return
             
             # Progress: 10% - YÖK sitesine giriş
             self.session.update_progress(10, "YÖK Akademik sitesine bağlanılıyor...")
@@ -204,7 +249,11 @@ class StreamingAcademicScraper:
             
         finally:
             if self.driver:
-                self.driver.quit()
+                try:
+                    self.driver.quit()
+                    print("✅ WebDriver kapatıldı")
+                except Exception as quit_error:
+                    print(f"⚠️ WebDriver kapatma hatası: {quit_error}")
             
             # Final progress
             self.session.update_progress(100, "İşlem tamamlandı")

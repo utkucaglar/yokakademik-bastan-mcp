@@ -1,0 +1,10 @@
+{
+  "session_id": "test_session_001",
+  "status": "completed",
+  "progress": 100,
+  "current_step": "İşlem tamamlandı",
+  "profiles_count": 100,
+  "collaborators_count": 0,
+  "start_time": 1754046992.3542898,
+  "last_update": 1754047079.509965
+}
