@@ -145,12 +145,12 @@ class StreamingAcademicScraper:
             self.session.update_progress(20, "Profil listesi yükleniyor...")
             yield {"type": "progress", "data": {"progress": 20, "step": "Profil listesi yükleniyor..."}}
             
-            # Profilleri çek
+            # Profilleri çek - daha hızlı
             profile_count = 0
             page_num = 1
-            progress_step = 70 / 100  # 20-90 arası progress için
+            progress_step = 70 / 50  # Sadece ilk 50 profil için (daha hızlı)
             
-            while profile_count < 100:
+            while profile_count < 50:  # 100 yerine 50 profil (daha hızlı)
                 try:
                     WebDriverWait(self.driver, 10).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR, "tr[id^='authorInfo_']"))
@@ -164,7 +164,7 @@ class StreamingAcademicScraper:
                     break
                 
                 for i, row in enumerate(profile_rows):
-                    if profile_count >= 100:
+                    if profile_count >= 50:  # 50 profil limiti
                         break
                     
                     try:
@@ -199,7 +199,7 @@ class StreamingAcademicScraper:
                         current_progress = 20 + (profile_count * progress_step)
                         self.session.update_progress(
                             int(current_progress), 
-                            f"Profil {profile_count}/100 işlendi: {profile_data['name']}"
+                            f"Profil {profile_count}/50 işlendi: {profile_data['name']}"
                         )
                         
                         # Her profil için update gönder
@@ -209,8 +209,8 @@ class StreamingAcademicScraper:
                             "progress": int(current_progress)
                         }}
                         
-                        # 0.5 saniye bekle (timeout prevention)
-                        await asyncio.sleep(0.5)
+                        # 0.1 saniye bekle (hızlandırıldı)
+                        await asyncio.sleep(0.1)
                         
                     except Exception as e:
                         print(f"Profil işlenirken hata: {e}")
@@ -231,8 +231,8 @@ class StreamingAcademicScraper:
                     next_a.click()
                     page_num += 1
                     
-                    # Sayfa değişimi için bekle
-                    await asyncio.sleep(1)
+                    # Sayfa değişimi için bekle (hızlandırıldı)
+                    await asyncio.sleep(0.3)
                     
                 except Exception as e:
                     print(f"Pagination hatası: {e}")
@@ -322,7 +322,7 @@ class StreamingAcademicScraper:
                             "progress": int(collab_progress)
                         }}
                         
-                        await asyncio.sleep(0.5)
+                        await asyncio.sleep(0.1)
                         
                 except Exception as e:
                     print(f"İşbirlikçi detayı çekilirken hata: {e}")

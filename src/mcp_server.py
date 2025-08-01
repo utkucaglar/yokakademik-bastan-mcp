@@ -1,23 +1,16 @@
 #!/usr/bin/env python3
 """
-MCP Server for Academic Profile Scraping with Real-time Streaming
-Bu server, YÖK Akademik veritabanından profil ve işbirlikçi bilgilerini
-real-time olarak çeker ve progress updates gönderir.
+Academic Scraper MCP Server
+Real-time streaming scraping için
 """
-
 import asyncio
 import json
-import os
-import sys
 import time
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Generator
-from pathlib import Path
+from typing import Any, Dict, List
 
-# MCP imports
 from mcp.server import Server
-from mcp.server.models import InitializationOptions
 from mcp.types import (
     Resource,
     Tool,
@@ -26,23 +19,20 @@ from mcp.types import (
     EmbeddedResource,
     LoggingLevel
 )
-import mcp.server.stdio
-import mcp.types as types
 
-# Local imports
-from .scraper.academic_scraper import StreamingAcademicScraper
-from .scraper.session_manager import create_session, get_session, list_sessions
+from src.scraper.academic_scraper import StreamingAcademicScraper
+from src.scraper.session_manager import create_session, get_session, list_sessions
 
-# MCP Server Setup
+# MCP Server
 server = Server("academic-scraper")
 
 @server.list_tools()
 async def handle_list_tools() -> List[Tool]:
-    """MCP tools listesi"""
+    """MCP Tools listesi"""
     return [
         Tool(
             name="scrape_academic_profiles",
-            description="YÖK Akademik veritabanından profil bilgilerini real-time streaming ile çeker",
+            description="Akademik profil scraping - real-time streaming ile",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -50,18 +40,18 @@ async def handle_list_tools() -> List[Tool]:
                         "type": "string",
                         "description": "Aranacak akademisyen adı"
                     },
-                    "email": {
-                        "type": "string",
-                        "description": "Belirli bir email ile eşleşme aranacaksa (opsiyonel)"
-                    },
                     "field_id": {
                         "type": "integer",
-                        "description": "Alan ID (fields.json'dan)"
+                        "description": "Alan ID (opsiyonel)"
                     },
                     "specialty_ids": {
                         "type": "array",
                         "items": {"type": "integer"},
-                        "description": "Uzmanlık ID'leri listesi"
+                        "description": "Uzmanlık ID'leri (opsiyonel)"
+                    },
+                    "email": {
+                        "type": "string",
+                        "description": "Email adresi (opsiyonel - tam eşleşme için)"
                     }
                 },
                 "required": ["name"]
@@ -69,7 +59,7 @@ async def handle_list_tools() -> List[Tool]:
         ),
         Tool(
             name="get_session_status",
-            description="Aktif scraping session durumunu kontrol et",
+            description="Session durumunu kontrol et",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -113,41 +103,33 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.T
         # Yeni session oluştur
         session_id = f"session_{datetime.now().strftime('%Y%m%d_%H%M%S')}_{str(uuid.uuid4())[:8]}"
         
-        scraper = StreamingAcademicScraper()
-        results = []
+        # Session'ı başlat
+        create_session(session_id)
         
-        try:
-            # Streaming generator'ı çalıştır
-            async for update in scraper.scrape_profiles_streaming(
-                name=arguments["name"],
+        # Background task olarak scraping'i başlat
+        asyncio.create_task(
+            run_scraping_background(
                 session_id=session_id,
+                name=arguments["name"],
                 field_id=arguments.get("field_id"),
                 specialty_ids=arguments.get("specialty_ids"),
                 email=arguments.get("email")
-            ):
-                # Her update'i hemen döndür
-                results.append(json.dumps(update, ensure_ascii=False))
-                
-                # Timeout prevention - her 30 saniyede heartbeat
-                if len(results) % 60 == 0:  # ~30 saniye (0.5s * 60)
-                    heartbeat = {
-                        "type": "heartbeat", 
-                        "timestamp": time.time(),
-                        "session_id": session_id
-                    }
-                    results.append(json.dumps(heartbeat, ensure_ascii=False))
+            )
+        )
         
-        except Exception as e:
-            error_result = {
-                "type": "error",
-                "data": {"message": str(e), "session_id": session_id}
+        # Hemen session bilgisi döndür
+        response = {
+            "type": "session_started",
+            "data": {
+                "session_id": session_id,
+                "message": f"'{arguments['name']}' için scraping başlatıldı",
+                "status": "running",
+                "timestamp": time.time(),
+                "check_status_with": f"get_session_status tool'u ile session_id: {session_id} kullanarak durumu kontrol edebilirsiniz"
             }
-            results.append(json.dumps(error_result, ensure_ascii=False))
+        }
         
-        # Tüm sonuçları birleştir
-        final_result = "\n".join(results)
-        
-        return [types.TextContent(type="text", text=final_result)]
+        return [types.TextContent(type="text", text=json.dumps(response, ensure_ascii=False))]
     
     elif name == "get_session_status":
         session_id = arguments["session_id"]
@@ -174,22 +156,48 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.T
                 "profiles": session.profiles,
                 "collaborators": session.collaborators,
                 "status": session.status,
-                "progress": session.progress
+                "progress": session.progress,
+                "total_profiles": len(session.profiles),
+                "total_collaborators": len(session.collaborators)
             }
         else:
-            results = {"session_id": session_id, "status": "not_found"}
+            results = {"session_id": session_id, "error": "Session bulunamadı"}
         
         return [types.TextContent(type="text", text=json.dumps(results, ensure_ascii=False, indent=2))]
+
+async def run_scraping_background(session_id: str, name: str, field_id: int = None, 
+                                 specialty_ids: List[int] = None, email: str = None):
+    """Background'da scraping çalıştır"""
+    scraper = StreamingAcademicScraper()
     
-    else:
-        raise ValueError(f"Bilinmeyen tool: {name}")
+    try:
+        async for update in scraper.scrape_profiles_streaming(
+            name=name,
+            session_id=session_id,
+            field_id=field_id,
+            specialty_ids=specialty_ids,
+            email=email
+        ):
+            # Session'a update'i kaydet (real-time için)
+            session = get_session(session_id)
+            if session:
+                session.last_update = update
+                session.last_update_time = time.time()
+    
+    except Exception as e:
+        session = get_session(session_id)
+        if session:
+            session.error_message = str(e)
+            session.status = "error"
 
 async def main():
-    """Ana MCP server fonksiyonu"""
+    """MCP Server başlat"""
     print("🎓 Academic Scraper MCP Server başlatılıyor...")
     print("📡 Smithery ile bağlantı kuruluyor...")
+    print("🔧 Real-time streaming scraping aktif...")
+    print("=" * 50)
     
-    # Stdio üzerinden MCP server'ı çalıştır
+    # stdio transport
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,

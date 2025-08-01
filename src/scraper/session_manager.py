@@ -21,6 +21,8 @@ class AcademicScrapingSession:
         self.collaborators = []
         self.error_message = ""
         self.start_time = time.time()
+        self.last_update = None
+        self.last_update_time = time.time()
         self.base_dir = Path(__file__).parent.parent.parent / "sessions" / session_id
         self.base_dir.mkdir(parents=True, exist_ok=True)
         
@@ -72,7 +74,9 @@ class AcademicScrapingSession:
             "collaborators_count": len(self.collaborators),
             "error_message": self.error_message,
             "start_time": self.start_time,
-            "elapsed_time": time.time() - self.start_time
+            "elapsed_time": time.time() - self.start_time,
+            "last_update": self.last_update,
+            "last_update_time": self.last_update_time
         }
 
 
