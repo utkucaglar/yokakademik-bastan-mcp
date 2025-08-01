@@ -10,7 +10,6 @@ import uuid
 from datetime import datetime
 from typing import Any, Dict, List
 
-import mcp
 from mcp.server import Server
 from mcp.types import (
     Resource,
@@ -255,6 +254,7 @@ async def main():
     print("=" * 50, file=sys.stderr)
     
     # stdio transport
+    import mcp.server.stdio
     async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,

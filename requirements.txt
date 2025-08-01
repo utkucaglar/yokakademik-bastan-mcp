@@ -1,5 +1,5 @@
 # MCP Core
-mcp>=1.1.0
+mcp @ git+https://github.com/modelcontextprotocol/python-sdk.git
 pydantic>=2.9.2
 
 # Web Scraping
