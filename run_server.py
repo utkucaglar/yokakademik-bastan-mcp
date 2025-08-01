@@ -15,10 +15,8 @@ from src.mcp_server import main as mcp_main
 
 def main():
     """MCP Server main function"""
-    print("🎓 Academic Scraper MCP Server başlatılıyor...", file=sys.stderr)
-    print("📡 Smithery ile bağlantı kuruluyor...", file=sys.stderr)
-    print("🔧 Real-time streaming scraping aktif...", file=sys.stderr)
-    print("=" * 50, file=sys.stderr)
+    # JSON-RPC protokolü için stderr'e print yapmıyoruz
+    # Sadece hata durumlarında stderr kullanıyoruz
     
     try:
         asyncio.run(mcp_main())

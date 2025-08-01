@@ -36,6 +36,7 @@ RUN mkdir -p sessions
 # Set environment variables
 ENV PYTHONPATH=/app
 ENV DISPLAY=:99
+ENV PYTHONUNBUFFERED=1
 
-# Run the MCP server
-CMD ["python", "run_server.py"] 
+# Run the MCP server with unbuffered output
+CMD ["python", "-u", "run_server.py"] 

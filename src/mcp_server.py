@@ -289,12 +289,7 @@ async def run_scraping_background(session_id: str, name: str, field_id: int = No
 
 async def main():
     """MCP Server başlat"""
-    import sys
-    print("🎓 Academic Scraper MCP Server başlatılıyor...", file=sys.stderr)
-    print("📡 Smithery ile bağlantı kuruluyor...", file=sys.stderr)
-    print("🔧 Real-time streaming scraping aktif...", file=sys.stderr)
-    print("=" * 50, file=sys.stderr)
-    
+    # JSON-RPC protokolü için stderr'e print yapmıyoruz
     # stdio transport
     from mcp.server.stdio import stdio_server
     async with stdio_server() as (read_stream, write_stream):
