@@ -254,8 +254,8 @@ async def main():
     print("=" * 50, file=sys.stderr)
     
     # stdio transport
-    import mcp.server.stdio
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
+    from mcp.server.stdio import stdio_server
+    async with stdio_server() as (read_stream, write_stream):
         await server.run(
             read_stream,
             write_stream,

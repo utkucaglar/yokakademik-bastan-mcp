@@ -12,7 +12,7 @@ authors = [
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
-    "mcp>=1.1.0",
+    "mcp @ git+https://github.com/modelcontextprotocol/python-sdk.git",
     "selenium>=4.15.0",
     "webdriver-manager>=4.0.0",
     "pydantic>=2.9.2",
