@@ -34,7 +34,7 @@ async def handle_list_tools() -> List[Tool]:
     return [
         Tool(
             name="scrape_academic_profiles",
-            description="Akademik profil scraping - real-time streaming ile",
+            description="Akademik profil scraping - direkt sonuç döndürür",
             inputSchema={
                 "type": "object",
                 "properties": {
@@ -54,6 +54,11 @@ async def handle_list_tools() -> List[Tool]:
                     "email": {
                         "type": "string",
                         "description": "Email adresi (opsiyonel - tam eşleşme için)"
+                    },
+                    "wait_for_completion": {
+                        "type": "boolean",
+                        "description": "Tamamlanmasını bekle (true) veya session başlat (false)",
+                        "default": true
                     }
                 },
                 "required": ["name"]
@@ -108,30 +113,79 @@ async def handle_call_tool(name: str, arguments: Dict[str, Any]) -> List[types.T
         # Session'ı başlat
         create_session(session_id)
         
-        # Background task olarak scraping'i başlat
-        asyncio.create_task(
-            run_scraping_background(
-                session_id=session_id,
-                name=arguments["name"],
-                field_id=arguments.get("field_id"),
-                specialty_ids=arguments.get("specialty_ids"),
-                email=arguments.get("email")
+        # wait_for_completion parametresini kontrol et
+        wait_for_completion = arguments.get("wait_for_completion", True)
+        
+        if wait_for_completion:
+            # Direkt scraping yap ve sonucu bekle
+            scraper = StreamingAcademicScraper()
+            profiles = []
+            collaborators = []
+            
+            try:
+                async for update in scraper.scrape_profiles_streaming(
+                    name=arguments["name"],
+                    session_id=session_id,
+                    field_id=arguments.get("field_id"),
+                    specialty_ids=arguments.get("specialty_ids"),
+                    email=arguments.get("email")
+                ):
+                    if update.get("type") == "profile_added":
+                        profiles.append(update["data"]["profile"])
+                    elif update.get("type") == "collaborator_added":
+                        collaborators.append(update["data"]["collaborator"])
+                    elif update.get("type") == "completed":
+                        break
+                    elif update.get("type") == "error":
+                        return [types.TextContent(type="text", text=json.dumps({
+                            "error": update["data"]["message"]
+                        }, ensure_ascii=False))]
+                
+                # Sonuçları döndür
+                response = {
+                    "type": "completed",
+                    "data": {
+                        "session_id": session_id,
+                        "profiles": profiles,
+                        "collaborators": collaborators,
+                        "total_profiles": len(profiles),
+                        "total_collaborators": len(collaborators),
+                        "message": f"'{arguments['name']}' için {len(profiles)} profil bulundu"
+                    }
+                }
+                
+                return [types.TextContent(type="text", text=json.dumps(response, ensure_ascii=False))]
+                
+            except Exception as e:
+                return [types.TextContent(type="text", text=json.dumps({
+                    "error": f"Scraping hatası: {str(e)}"
+                }, ensure_ascii=False))]
+        
+        else:
+            # Background task olarak scraping'i başlat
+            asyncio.create_task(
+                run_scraping_background(
+                    session_id=session_id,
+                    name=arguments["name"],
+                    field_id=arguments.get("field_id"),
+                    specialty_ids=arguments.get("specialty_ids"),
+                    email=arguments.get("email")
+                )
             )
-        )
-        
-        # Hemen session bilgisi döndür
-        response = {
-            "type": "session_started",
-            "data": {
-                "session_id": session_id,
-                "message": f"'{arguments['name']}' için scraping başlatıldı",
-                "status": "running",
-                "timestamp": time.time(),
-                "check_status_with": f"get_session_status tool'u ile session_id: {session_id} kullanarak durumu kontrol edebilirsiniz"
+            
+            # Hemen session bilgisi döndür
+            response = {
+                "type": "session_started",
+                "data": {
+                    "session_id": session_id,
+                    "message": f"'{arguments['name']}' için scraping başlatıldı",
+                    "status": "running",
+                    "timestamp": time.time(),
+                    "check_status_with": f"get_session_status tool'u ile session_id: {session_id} kullanarak durumu kontrol edebilirsiniz"
+                }
             }
-        }
-        
-        return [types.TextContent(type="text", text=json.dumps(response, ensure_ascii=False))]
+            
+            return [types.TextContent(type="text", text=json.dumps(response, ensure_ascii=False))]
     
     elif name == "get_session_status":
         session_id = arguments["session_id"]
