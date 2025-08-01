@@ -194,14 +194,7 @@ async def main():
         await server.run(
             read_stream,
             write_stream,
-            InitializationOptions(
-                server_name="academic-scraper",
-                server_version="1.0.0",
-                capabilities=server.get_capabilities(
-                    notification_options=None,
-                    experimental_capabilities=None,
-                )
-            )
+            server.create_initialization_options()
         )
 
 if __name__ == "__main__":
