@@ -1,4 +1,5 @@
 # Academic Scraper MCP Server
+[![smithery badge](https://smithery.ai/badge/@utkucaglar/yokakademik-bastan-mcp)](https://smithery.ai/server/@utkucaglar/yokakademik-bastan-mcp)
 
 🎓 **YÖK Akademik Veritabanı Real-time Streaming Scraper**
 
@@ -36,6 +37,14 @@ academic-scraper-mcp/
 ```
 
 ## 🛠️ Kurulum
+
+### Installing via Smithery
+
+To install Academic Scraper for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@utkucaglar/yokakademik-bastan-mcp):
+
+```bash
+npx -y @smithery/cli install @utkucaglar/yokakademik-bastan-mcp --client claude
+```
 
 ### 1. Dependencies Kurulumu
 
