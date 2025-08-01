@@ -11,18 +11,22 @@ from pathlib import Path
 project_root = Path(__file__).parent
 sys.path.insert(0, str(project_root))
 
-from src.mcp_server import main
+from src.mcp_server import main as mcp_main
 
-if __name__ == "__main__":
+def main():
+    """MCP Server main function"""
     print("🎓 Academic Scraper MCP Server başlatılıyor...", file=sys.stderr)
     print("📡 Smithery ile bağlantı kuruluyor...", file=sys.stderr)
     print("🔧 Real-time streaming scraping aktif...", file=sys.stderr)
     print("=" * 50, file=sys.stderr)
     
     try:
-        asyncio.run(main())
+        asyncio.run(mcp_main())
     except KeyboardInterrupt:
         print("\n🛑 Server kapatılıyor...", file=sys.stderr)
     except Exception as e:
         print(f"❌ Server hatası: {e}", file=sys.stderr)
-        sys.exit(1) 
+        sys.exit(1)
+
+if __name__ == "__main__":
+    main() 
